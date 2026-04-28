@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kids Team Game Board</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .big-title { font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+    .sub { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+    .kids-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+    .kid-btn { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 16px 8px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .kid-btn:hover { border-color: #534AB7; background: #f8f7ff; }
+    .kid-btn.selected { background: #EEEDFE; border-color: #534AB7; }
+    .kid-num { font-size: 28px; font-weight: 600; color: #534AB7; display: block; }
+    .kid-label { font-size: 12px; color: #888; margin-top: 2px; }
+    .kid-btn.selected .kid-label { color: #534AB7; }
+    .custom-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+    .custom-row label { font-size: 13px; color: #666; }
+    .custom-row input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 90px; }
+    .selected-info { font-size: 14px; color: #534AB7; font-weight: 600; margin-bottom: 1rem; min-height: 20px; }
+    .next-btn { background: #534AB7; color: #fff; border: none; border-radius: 8px; padding: 12px 28px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .next-btn:hover:not(:disabled) { background: #3C3489; }
+    .back-btn { background: transparent; border: 1px solid #ccc; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; color: #555; margin-bottom: 1.5rem; }
+    .back-btn:hover { background: #f0f0f0; }
+    .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+    .game-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .game-card:hover { border-color: #534AB7; background: #fafafa; }
+    .game-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 20px; }
+    .game-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .game-tag { font-size: 11px; color: #888; }
+    .warn { font-size: 11px; color: #c0392b; margin-top: 4px; }
+    .desc-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+    .desc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .desc-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .desc-subtitle { font-size: 13px; color: #888; }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+    .pill { font-size: 12px; padding: 4px 12px; border-radius: 99px; font-weight: 500; }
+    .pill-purple { background: #EEEDFE; color: #3C3489; }
+    .pill-teal { background: #E1F5EE; color: #085041; }
+    .pill-amber { background: #FAEEDA; color: #633806; }
+    .section { margin-bottom: 1rem; }
+    .section h3 { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .section p, .section li { font-size: 14px; line-height: 1.6; color: #222; }
+    .section ul { padding-left: 1.2rem; }
+    .section li { margin-bottom: 4px; }
+    .score-board { background: #f7f7f4; border-radius: 10px; padding: 1rem; margin-top: 1rem; }
+    .score-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #eee; }
+    .score-row:last-child { border-bottom: none; }
+    .team-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .team-name { font-size: 14px; font-weight: 500; }
+    .team-info { font-size: 13px; color: #888; }
+    .board-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- PAGE 1: Home -->
+  <div id="page-home" class="page active">
+    <div class="big-title">Kids team game board</div>
+    <p class="sub">How many kids are playing today?</p>
+    <div class="kids-grid" id="kids-grid"></div>
+    <div class="custom-row">
+      <label>Or enter a number:</label>
+      <input type="number" min="2" max="100" placeholder="e.g. 25" id="custom-kids" oninput="selectCustom(this.value)">
+    </div>
+    <div class="selected-info" id="selected-info"></div>
+    <button class="next-btn" id="next1" disabled onclick="goGames()">Pick a game →</button>
+  </div>
+
+  <!-- PAGE 2: Games -->
+  <div id="page-games" class="page">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <div class="big-title">Choose a game</div>
+    <p class="sub" id="games-sub"></p>
+    <div class="games-grid" id="games-grid"></div>
+  </div>
+
+  <!-- PAGE 3: Description -->
+  <div id="page-desc" class="page">
+    <button class="back-btn" onclick="goGames()">← Back to games</button>
+    <div id="desc-content"></div>
+  </div>
+
+</div>
+
+<script>
+  let selectedKids = 0;
+
+  const TEAM_COLORS = ['#534AB7','#1D9E75','#D85A30','#185FA5','#993556'];
+  const TEAM_NAMES = ['Purple','Teal','Coral','Blue','Pink'];
+
+  const GAMES = [
+    {
+      name: 'Relay race', tag: 'Outdoor · Active', icon: '🏃', iconBg: '#E1F5EE', minKids: 4,
+      duration: '15–20 min', energy: 'High', teams: '2–4 teams',
+      desc: 'Teams race one at a time to complete a course and pass a baton to the next teammate.',
+      howTo: ['Divide kids into equal teams and line them up.','Mark a start line and a turnaround point.','First player runs to the marker, turns back, and passes the baton.','Next player goes — repeat until all have run.','Fastest team wins!'],
+      tips: 'Add fun obstacles like hula hoops or cones to make it more exciting.',
+      variations: 'Sack race, egg-and-spoon, three-legged race.'
+    },
+    {
+      name: 'Tug of war', tag: 'Outdoor · Teamwork', icon: '💪', iconBg: '#FAEEDA', minKids: 6,
+      duration: '10–15 min', energy: 'High', teams: '2 teams',
+      desc: 'Two teams pull opposite ends of a rope — the team that pulls the other across the centre line wins.',
+      howTo: ['Divide into two equal teams.','Mark a centre line on the ground.','Each team grabs their end of the rope.','On "Go!" both teams pull as hard as they can.','The team that pulls the other side past the line wins.'],
+      tips: 'Make sure teams are roughly balanced in size and weight for fairness.',
+      variations: 'Blindfold one team, or use a circular rope for multi-team chaos!'
+    },
+    {
+      name: 'Treasure hunt', tag: 'Indoor/Outdoor · Strategy', icon: '🗺', iconBg: '#EEEDFE', minKids: 4,
+      duration: '20–30 min', energy: 'Medium', teams: '2–5 teams',
+      desc: 'Teams follow clues to find hidden treasures. First team to collect all items wins.',
+      howTo: ['Hide small objects or clue cards around the play area before the game.','Give each team a starting clue.','Each clue leads to the next location.','At the final location, a "treasure" (stickers, snacks, etc.) is waiting.','First team to find the treasure wins!'],
+      tips: 'Tailor clue difficulty to the age group. Use riddles for older kids.',
+      variations: 'Nature scavenger hunt, photo hunt, or number puzzle trail.'
+    },
+    {
+      name: 'Balloon pop relay', tag: 'Indoor · Hilarious', icon: '🎈', iconBg: '#FBEAF0', minKids: 4,
+      duration: '10–15 min', energy: 'Medium', teams: '2–4 teams',
+      desc: 'Kids carry a balloon between their knees to the finish line and sit on it to pop it — no hands allowed!',
+      howTo: ['Blow up one balloon per player.','Teams line up at the start line.','First player puts balloon between knees and waddles to the finish.','They sit on the balloon to pop it, then run back to tag the next player.','First team to pop all balloons wins!'],
+      tips: 'Keep spare balloons ready in case some pop early. Use a pump for speed.',
+      variations: 'Use water balloons outdoors for a messy summer version!'
+    },
+    {
+      name: 'Human knot', tag: 'Indoor · Teamwork', icon: '🤝', iconBg: '#E1F5EE', minKids: 6,
+      duration: '10–15 min', energy: 'Low', teams: '1–2 teams',
+      desc: 'Kids form a circle, grab random hands across the circle, then untangle themselves without letting go.',
+      howTo: ['Everyone stands in a circle facing inward.','Each person reaches across and grabs two different hands.','Without releasing hands, the group works together to untangle.','Goal: form a circle again (or two interlocked circles).','No time limit — just celebrate when untangled!'],
+      tips: 'Remind kids to move slowly and communicate. Works best with 6–12 per group.',
+      variations: 'Set a timer for a challenge. Try with eyes closed for an extra twist.'
+    },
+    {
+      name: 'Freeze tag', tag: 'Outdoor · Classic', icon: '❄', iconBg: '#E6F1FB', minKids: 6,
+      duration: '10–20 min', energy: 'High', teams: '2 teams',
+      desc: 'One team are taggers, the other tries to avoid being tagged. Tagged players freeze until unfrozen by a teammate.',
+      howTo: ['Choose 2–3 kids as the "taggers" — they\'re It.','All other kids run freely in the play area.','If tagged, a player must freeze in place.','Frozen players can be unfrozen by a teammate\'s tap.','Taggers win if all players are frozen at once. Switch roles after 3 mins.'],
+      tips: 'Define clear boundaries for the play area. Use bibs or tags to identify the taggers.',
+      variations: 'Team freeze tag, colour freeze tag, or hospital tag.'
+    },
+    {
+      name: 'Hula hoop pass', tag: 'Indoor/Outdoor · Fun', icon: '⭕', iconBg: '#FAEEDA', minKids: 6,
+      duration: '10 min', energy: 'Low', teams: '2–4 teams',
+      desc: 'Teams hold hands in a line and pass a hula hoop from one end to the other without letting go.',
+      howTo: ['Teams line up holding hands.','A hula hoop is placed on the wrist of the first player.','Players must pass the hoop along the chain — stepping through it — without releasing hands.','First team to get the hoop to the end wins.'],
+      tips: 'Smaller hoops are harder. Use a big hoop for younger kids.',
+      variations: 'Race two hoops going in opposite directions at the same time!'
+    },
+    {
+      name: 'Capture the flag', tag: 'Outdoor · Strategy', icon: '🚩', iconBg: '#FCEBEB', minKids: 8,
+      duration: '20–30 min', energy: 'High', teams: '2 teams',
+      desc: 'Two teams each defend a flag in their territory while trying to capture the other team\'s flag.',
+      howTo: ['Divide the play area into two equal territories.','Each team places their flag at the back of their territory.','Players try to sneak into the opponent\'s territory to grab their flag.','Tagged players in enemy territory go to "jail" until freed by a teammate.','First team to bring the enemy flag to their base wins!'],
+      tips: 'Use cones to clearly mark territory boundaries. Bibs help identify teams.',
+      variations: 'Multi-team capture (3+ flags), or night version with glow sticks!'
+    }
+  ];
+
+  function buildKidsGrid() {
+    const grid = document.getElementById('kids-grid');
+    [4,6,8,10,12,15,20,25,30].forEach(n => {
+      const btn = document.createElement('div');
+      btn.className = 'kid-btn';
+      btn.innerHTML = `<span class="kid-num">${n}</span><span class="kid-label">kids</span>`;
+      btn.onclick = () => selectKids(n, btn);
+      grid.appendChild(btn);
+    });
+  }
+
+  function selectKids(n, btn) {
+    selectedKids = n;
+    document.querySelectorAll('.kid-btn').forEach(b => b.classList.remove('selected'));
+    if (btn) btn.classList.add('selected');
+    document.getElementById('custom-kids').value = '';
+    updateKidInfo();
+  }
+
+  function selectCustom(val) {
+    const n = parseInt(val);
+    if (n >= 2) {
+      selectedKids = n;
+      document.querySelectorAll('.kid-btn').forEach(b => b.classList.remove('selected'));
+      updateKidInfo();
+    }
+  }
+
+  function updateKidInfo() {
+    const teams = Math.min(5, selectedKids <= 6 ? 2 : selectedKids <= 12 ? 3 : selectedKids <= 20 ? 4 : 5);
+    const perTeam = Math.round(selectedKids / teams);
+    document.getElementById('selected-info').textContent = `${selectedKids} kids → ${teams} teams of ~${perTeam}`;
+    document.getElementById('next1').disabled = false;
+  }
+
+  function goHome() { showPage('page-home'); }
+
+  function goGames() {
+    const teams = Math.min(5, selectedKids <= 6 ? 2 : selectedKids <= 12 ? 3 : selectedKids <= 20 ? 4 : 5);
+    const perTeam = Math.round(selectedKids / teams);
+    document.getElementById('games-sub').textContent = `${selectedKids} kids · ${teams} teams of ~${perTeam} · Click a game to see how to play`;
+    buildGamesGrid();
+    showPage('page-games');
+  }
+
+  function buildGamesGrid() {
+    const grid = document.getElementById('games-grid');
+    grid.innerHTML = '';
+    GAMES.forEach((g, i) => {
+      const card = document.createElement('div');
+      card.className = 'game-card';
+      const ok = selectedKids >= g.minKids;
+      card.innerHTML = `
+        <div class="game-icon" style="background:${g.iconBg}">${g.icon}</div>
+        <div class="game-name">${g.name}</div>
+        <div class="game-tag">${g.tag}</div>
+        ${!ok ? `<div class="warn">Needs ${g.minKids}+ kids</div>` : ''}
+      `;
+      card.onclick = () => showDesc(i);
+      grid.appendChild(card);
+    });
+  }
+
+  function showDesc(idx) {
+    const g = GAMES[idx];
+    const teams = Math.min(5, selectedKids <= 6 ? 2 : selectedKids <= 12 ? 3 : selectedKids <= 20 ? 4 : 5);
+    const perTeam = Math.round(selectedKids / teams);
+
+    let teamRows = '';
+    for (let t = 0; t < teams; t++) {
+      const start = t * perTeam + 1;
+      const end = t === teams - 1 ? selectedKids : (t + 1) * perTeam;
+      teamRows += `<div class="score-row">
+        <span><span class="team-dot" style="background:${TEAM_COLORS[t]}"></span><span class="team-name">${TEAM_NAMES[t]} team</span></span>
+        <span class="team-info">Kids ${start}–${end} &nbsp;·&nbsp; 0 pts</span>
+      </div>`;
+    }
+
+    const steps = g.howTo.map(s => `<li>${s}</li>`).join('');
+
+    document.getElementById('desc-content').innerHTML = `
+      <div class="desc-card">
+        <div class="desc-header">
+          <div class="game-icon" style="background:${g.iconBg};width:44px;height:44px;font-size:22px;">${g.icon}</div>
+          <div>
+            <div class="desc-title">${g.name}</div>
+            <div class="desc-subtitle">${g.tag}</div>
+          </div>
+        </div>
+        <div class="pills">
+          <span class="pill pill-purple">Duration: ${g.duration}</span>
+          <span class="pill pill-teal">Energy: ${g.energy}</span>
+          <span class="pill pill-amber">${g.teams}</span>
+          <span class="pill pill-purple">Min ${g.minKids} kids</span>
+        </div>
+        <div class="section"><h3>About</h3><p>${g.desc}</p></div>
+        <div class="section"><h3>How to play</h3><ul>${steps}</ul></div>
+        <div class="section"><h3>Tip</h3><p>${g.tips}</p></div>
+        <div class="section"><h3>Variations</h3><p>${g.variations}</p></div>
+      </div>
+      <div class="board-title">Team setup for ${selectedKids} kids</div>
+      <div class="score-board">${teamRows}</div>
+    `;
+    showPage('page-desc');
+  }
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  buildKidsGrid();
+</script>
+</body>
+</html>
